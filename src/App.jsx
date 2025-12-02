@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AuthPage from './pages/Auth/AuthPage';
-// import DashboardPage from './pages/Dashboard/DashboardPage';
+import DashboardPage from './pages/Dashboard/DashboardPage';
 // import CreatePostPage from './pages/CreatePost/CreatePostPage';
 // import ContentPlanPage from './pages/ContentPlan/ContentPlanPage';
 // import TelegramAnalysisPage from './pages/TelegramAnalysis/TelegramAnalysisPage';
@@ -8,7 +8,7 @@ import AuthPage from './pages/Auth/AuthPage';
 // import SettingsPage from './pages/Settings/SettingsPage';
 import RecoveryPasswordPage from './pages/RecoveryPassword/RecoveryPasswordPage';
 import EmailConfirmationPage from './pages/Auth/EmailConfirmationPage';
-// import Header from './components/Header/Header';
+import Header from './components/Header/Header';
 // import BusinessProfileModal from './components/BusinessProfileModal/BusinessProfileModal';
 import './App.css';
 

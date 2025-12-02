@@ -1,0 +1,373 @@
+.header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Левая часть */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.header-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3b82f6;
+  cursor: pointer;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.business-switcher {
+  position: relative;
+}
+
+.business-switcher-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 180px;
+}
+
+.business-switcher-btn:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.business-logo {
+  font-size: 1.25rem;
+}
+
+.business-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron-icon {
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.business-switcher-btn:hover .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.business-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.business-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.business-option:hover {
+  background: #f9fafb;
+}
+
+.business-option-logo {
+  font-size: 1.25rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 0.5rem;
+}
+
+.business-option-info {
+  flex: 1;
+}
+
+.business-option-name {
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 0.125rem;
+}
+
+.business-option-industry {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0.5rem 0;
+}
+
+.add-business-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.add-business-btn:hover {
+  background: #eff6ff;
+}
+
+/* Навигация */
+.header-nav.desktop {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.header-nav.mobile {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  z-index: 40;
+}
+
+.nav-btn {
+  padding: 0.625rem 1rem;
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.nav-btn.active {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.mobile-menu-btn:hover {
+  background: #f3f4f6;
+}
+
+/* Правая часть (пользователь) */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 50%;
+  border: none;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
+}
+
+.avatar-initials {
+  font-size: 0.875rem;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 280px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+}
+
+.user-avatar-small {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.125rem;
+}
+
+.user-email {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #f9fafb;
+}
+
+.dropdown-item.logout {
+  color: #dc2626;
+}
+
+.dropdown-item.logout:hover {
+  background: #fef2f2;
+}
+
+.item-icon {
+  color: #9ca3af;
+}
+
+.dropdown-item.logout .item-icon {
+  color: #dc2626;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .header-nav.desktop {
+    display: none;
+  }
+  
+  .mobile-menu-btn {
+    display: block;
+  }
+  
+  .header-nav.mobile {
+    display: flex;
+  }
+  
+  .business-switcher-btn {
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-container {
+    padding: 0 1rem;
+  }
+  
+  .header-left {
+    gap: 1rem;
+  }
+  
+  .business-switcher-btn {
+    min-width: auto;
+    padding: 0.5rem;
+  }
+  
+  .business-name {
+    display: none;
+  }
+  
+  .user-dropdown {
+    width: 250px;
+    right: -1rem;
+  }
+}

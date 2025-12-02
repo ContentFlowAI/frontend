@@ -1,0 +1,147 @@
+.dashboard-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  color: #111827;
+}
+
+.add-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  background: #2563eb;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+  margin: 0 0 0.5rem 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.businesses-section {
+  margin-bottom: 2rem;
+}
+
+.businesses-section h2 {
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.businesses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.business-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.business-card.add-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #d1d5db;
+  background: #f9fafb;
+}
+
+.business-card button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.business-card button:hover {
+  background: #2563eb;
+}
+
+.business-logo {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.business-card h3 {
+  margin: 0 0 0.5rem 0;
+  color: #111827;
+}
+
+.business-card p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.quick-actions h2 {
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.action-btn {
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
