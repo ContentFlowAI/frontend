@@ -19,7 +19,7 @@ const mockBusinesses = [
   { id: '3', name: 'CreativeStudio', logo: '🎨', description: 'Design and creative services', industry: 'Creative' },
 ];
 
-// Сервис для работы с localStorage (можно вынести в отдельный файл позже)
+// Сервис для работы с localStorage
 const storage = {
   setAuthData(data) {
     localStorage.setItem('auth_token', data.token || 'mock_token');

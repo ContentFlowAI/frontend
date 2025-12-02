@@ -89,7 +89,6 @@ const AuthPage = ({
       ...prev,
       [name]: value
     }));
-    // Очищаем ошибки при вводе
     if (localError) setLocalError('');
   };
 
@@ -110,7 +109,6 @@ const AuthPage = ({
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-card">
-          {/* Сообщения */}
           {(error || localError) && (
             <div className="auth-error">
               <span>{error || localError}</span>
@@ -275,7 +273,7 @@ const AuthPage = ({
 
           {/* Demo Accounts */}
           <div className="demo-accounts">
-            <p className="demo-title">Попробуйте демо-аккаунты:</p>
+            <p className="demo-title">Попробуйте демо-аккаунт:</p>
             <div className="demo-grid">
               <div className="demo-card">
                 <div className="demo-role">Контент-менеджер</div>

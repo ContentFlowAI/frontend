@@ -330,7 +330,7 @@ const RecoveryPasswordPage = ({
           {step === 4 && (
             <div className="success-screen">
               <div className="success-icon">
-                <CheckCircle size={64} />
+                <CheckCircle size={50} />
               </div>
               <h2 className="success-title">Пароль успешно изменен!</h2>
               <p className="success-message">
@@ -342,20 +342,6 @@ const RecoveryPasswordPage = ({
                   className="success-btn primary"
                 >
                   Войти в систему
-                </button>
-                <button 
-                  onClick={() => {
-                    setStep(1);
-                    setEmail('');
-                    setCode(['', '', '', '', '', '']);
-                    setNewPassword('');
-                    setConfirmPassword('');
-                    setLocalError('');
-                    onClearMessages?.();
-                  }}
-                  className="success-btn secondary"
-                >
-                  Сбросить другой пароль
                 </button>
               </div>
             </div>
