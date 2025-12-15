@@ -22,6 +22,15 @@ const AuthPage = ({
   });
   const [localError, setLocalError] = useState('');
 
+  // Функция для получения сохраненных пользователей (для отладки)
+  const getRegisteredUsers = () => {
+    try {
+      return JSON.parse(localStorage.getItem('registered_users') || '[]');
+    } catch {
+      return [];
+    }
+  };
+
   // Очистка сообщений при переключении режима
   const handleModeChange = (newMode) => {
     onClearMessages?.();
@@ -60,6 +69,23 @@ const AuthPage = ({
         setLocalError('Пароль должен содержать минимум 6 символов');
         return;
       }
+      
+      // Проверка требований к паролю
+      if (!/[A-Z]/.test(formData.password)) {
+        setLocalError('Пароль должен содержать хотя бы одну заглавную букву');
+        return;
+      }
+      
+      if (!/\d/.test(formData.password)) {
+        setLocalError('Пароль должен содержать хотя бы одну цифру');
+        return;
+      }
+      
+      if (!/[!@#$%^&*]/.test(formData.password)) {
+        setLocalError('Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)');
+        return;
+      }
+      
       if (formData.password !== formData.confirmPassword) {
         setLocalError('Пароли не совпадают');
         return;
@@ -92,17 +118,90 @@ const AuthPage = ({
     if (localError) setLocalError('');
   };
 
-  const handleDemoLogin = (demoEmail, demoPassword) => {
+  const handleDemoLogin = async (demoEmail, demoPassword, demoName = 'Демо Пользователь', demoUsername = 'demo') => {
     onClearMessages?.();
     setLocalError('');
+    
+    // Проверяем, есть ли уже демо пользователь
+    const users = getRegisteredUsers();
+    const existingDemoUser = users.find(u => u.email === demoEmail);
+    
+    if (!existingDemoUser) {
+      // Создаем демо пользователя если его нет
+      const demoUser = {
+        id: `demo_user_${Date.now()}`,
+        email: demoEmail,
+        name: demoName,
+        username: demoUsername,
+        password: demoPassword,
+        emailConfirmed: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Сохраняем демо пользователя
+      users.push(demoUser);
+      localStorage.setItem('registered_users', JSON.stringify(users));
+    }
+    
+    // Заполняем форму демо данными
     setFormData({
-      name: 'Демо Пользователь',
-      username: 'demo',
+      name: demoName,
+      username: demoUsername,
       email: demoEmail,
       password: demoPassword,
       confirmPassword: demoPassword
     });
-    onLogin(demoEmail, demoPassword);
+    
+    // Выполняем вход
+    try {
+      await onLogin(demoEmail, demoPassword);
+    } catch (err) {
+      setLocalError(err.message || 'Ошибка демо входа');
+    }
+  };
+
+  const handleTestConfirmation = async () => {
+    onClearMessages?.();
+    setLocalError('');
+    
+    const testEmail = 'unconfirmed@example.com';
+    const testPassword = 'Test123!@#';
+    
+    // Проверяем, есть ли тестовый пользователь
+    const users = getRegisteredUsers();
+    const existingTestUser = users.find(u => u.email === testEmail);
+    
+    if (!existingTestUser) {
+      // Создаем тестового пользователя с неподтвержденным email
+      const testUser = {
+        id: `test_user_${Date.now()}`,
+        email: testEmail,
+        name: 'Тестовый Пользователь',
+        username: 'testuser',
+        password: testPassword,
+        emailConfirmed: false,
+        createdAt: new Date().toISOString()
+      };
+      
+      users.push(testUser);
+      localStorage.setItem('registered_users', JSON.stringify(users));
+    }
+    
+    // Заполняем форму тестовыми данными
+    setFormData({
+      name: 'Тестовый Пользователь',
+      username: 'testuser',
+      email: testEmail,
+      password: testPassword,
+      confirmPassword: testPassword
+    });
+    
+    // Выполняем вход (должен потребовать подтверждение email)
+    try {
+      await onLogin(testEmail, testPassword);
+    } catch (err) {
+      setLocalError(err.message || 'Ошибка тестового входа');
+    }
   };
 
   return (
@@ -207,6 +306,11 @@ const AuthPage = ({
                 required
                 disabled={loading}
               />
+              {mode === 'signup' && (
+                <div className="password-hint">
+                  Минимум 6 символов, заглавная буква, цифра и специальный символ
+                </div>
+              )}
             </div>
 
             {mode === 'signup' && (
@@ -273,37 +377,50 @@ const AuthPage = ({
 
           {/* Demo Accounts */}
           <div className="demo-accounts">
-            <p className="demo-title">Попробуйте демо-аккаунт:</p>
+            <p className="demo-title">Быстрые тестовые аккаунты:</p>
             <div className="demo-grid">
               <div className="demo-card">
-                <div className="demo-role">Контент-менеджер</div>
+                <div className="demo-role">Демо контент-менеджера</div>
                 <div className="demo-info">
                   <div className="demo-email">demo@example.com</div>
-                  <div className="demo-password">password123</div>
+                  <div className="demo-password">Demo123!@#</div>
                 </div>
                 <button 
                   className="demo-btn"
-                  onClick={() => handleDemoLogin('demo@example.com', 'password123')}
+                  onClick={() => handleDemoLogin(
+                    'demo@example.com', 
+                    'Demo123!@#',
+                    'Демо Контент-Менеджер',
+                    'demo_manager'
+                  )}
                   disabled={loading}
                 >
                   Быстрый вход
                 </button>
               </div>
               <div className="demo-card">
-                <div className="demo-role">Тест подтверждения</div>
+                <div className="demo-role">Тест подтверждения email</div>
                 <div className="demo-info">
                   <div className="demo-email">unconfirmed@example.com</div>
-                  <div className="demo-password">anypassword</div>
+                  <div className="demo-password">Test123!@#</div>
                 </div>
                 <button 
                   className="demo-btn"
-                  onClick={() => handleDemoLogin('unconfirmed@example.com', 'anypassword')}
+                  onClick={handleTestConfirmation}
                   disabled={loading}
                 >
                   Тест подтверждения
                 </button>
               </div>
             </div>
+            
+            {/* Отладочная информация (можно удалить в продакшене) */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="debug-info" style={{marginTop: '10px', fontSize: '12px', color: '#666', textAlign: 'center'}}>
+                <p>Зарегистрировано пользователей: {getRegisteredUsers().length}</p>
+                <p style={{fontSize: '10px'}}>Для тестирования можно использовать код: 000000</p>
+              </div>
+            )}
           </div>
         </div>
 

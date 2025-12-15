@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AuthPage from './pages/Auth/AuthPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import CreateBusinessPage from './pages/Business/CreateBusinessPage';
 // import CreatePostPage from './pages/CreatePost/CreatePostPage';
 // import ContentPlanPage from './pages/ContentPlan/ContentPlanPage';
 // import TelegramAnalysisPage from './pages/TelegramAnalysis/TelegramAnalysisPage';
@@ -9,18 +10,11 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import RecoveryPasswordPage from './pages/RecoveryPassword/RecoveryPasswordPage';
 import EmailConfirmationPage from './pages/Auth/EmailConfirmationPage';
 import Header from './components/Header/Header';
-// import BusinessProfileModal from './components/BusinessProfileModal/BusinessProfileModal';
 import './App.css';
-
-// Моковые данные
-const mockBusinesses = [
-  { id: '1', name: 'TechCorp', logo: '🚀', description: 'Technology solutions for modern businesses', industry: 'Technology' },
-  { id: '2', name: 'MarketPlace', logo: '🛍️', description: 'E-commerce platform for artisans', industry: 'E-commerce' },
-  { id: '3', name: 'CreativeStudio', logo: '🎨', description: 'Design and creative services', industry: 'Creative' },
-];
 
 // Сервис для работы с localStorage
 const storage = {
+  // ========== АУТЕНТИФИКАЦИЯ ==========
   setAuthData(data) {
     localStorage.setItem('auth_token', data.token || 'mock_token');
     localStorage.setItem('user_data', JSON.stringify(data.user));
@@ -45,7 +39,7 @@ const storage = {
     return !!localStorage.getItem('auth_token');
   },
 
-  // Для подтверждения email
+  // ========== EMAIL ПОДТВЕРЖДЕНИЕ ==========
   setEmailConfirmationData(email) {
     localStorage.setItem('pending_email', email);
     localStorage.setItem('needs_email_confirmation', 'true');
@@ -61,6 +55,72 @@ const storage = {
   clearEmailConfirmationData() {
     localStorage.removeItem('pending_email');
     localStorage.removeItem('needs_email_confirmation');
+  },
+
+  // ========== БИЗНЕСЫ ==========
+  // Сохранение бизнесов привязанных к пользователю
+  saveBusinessesForUser(userId, businesses) {
+    localStorage.setItem(`businesses_${userId}`, JSON.stringify(businesses));
+  },
+
+  getBusinessesForUser(userId) {
+    const businesses = localStorage.getItem(`businesses_${userId}`);
+    return businesses ? JSON.parse(businesses) : [];
+  },
+
+  addBusinessForUser(userId, business) {
+    const existingBusinesses = this.getBusinessesForUser(userId);
+    const updatedBusinesses = [...existingBusinesses, business];
+    this.saveBusinessesForUser(userId, updatedBusinesses);
+    return updatedBusinesses;
+  },
+
+  // ========== ПОЛЬЗОВАТЕЛИ ==========
+  // Сохранение зарегистрированных пользователей
+  saveRegisteredUser(userData) {
+    const users = this.getRegisteredUsers();
+    const existingIndex = users.findIndex(u => u.email === userData.email);
+    
+    if (existingIndex >= 0) {
+      users[existingIndex] = userData;
+    } else {
+      users.push(userData);
+    }
+    
+    localStorage.setItem('registered_users', JSON.stringify(users));
+    return userData;
+  },
+
+  getRegisteredUsers() {
+    const users = localStorage.getItem('registered_users');
+    return users ? JSON.parse(users) : [];
+  },
+
+  findUserByEmail(email) {
+    const users = this.getRegisteredUsers();
+    return users.find(u => u.email === email);
+  },
+
+  updateUserPassword(email, newPassword) {
+    const users = this.getRegisteredUsers();
+    const userIndex = users.findIndex(u => u.email === email);
+    
+    if (userIndex >= 0) {
+      users[userIndex].password = newPassword;
+      localStorage.setItem('registered_users', JSON.stringify(users));
+      return true;
+    }
+    return false;
+  },
+
+  removeDefaultBusinesses(userId) {
+    const businesses = this.getBusinessesForUser(userId);
+    const filteredBusinesses = businesses.filter(business => 
+      !business.id.includes('default') && 
+      !business.id.includes('demo')
+    );
+    this.saveBusinessesForUser(userId, filteredBusinesses);
+    return filteredBusinesses;
   }
 };
 
@@ -75,19 +135,39 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
   const [showRecovery, setShowRecovery] = useState(false);
+  const [showCreateBusiness, setShowCreateBusiness] = useState(false);
   
   // Состояния приложения
-  const [businesses, setBusinesses] = useState(mockBusinesses);
-  const [selectedBusiness, setSelectedBusiness] = useState(mockBusinesses[0]?.id || '');
-  const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const [user, setUser] = useState(storage.getAuthData().user || null);
+  const [businesses, setBusinesses] = useState([]);
+  const [selectedBusiness, setSelectedBusiness] = useState('');
   
   // Состояния для UI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  
-  // Пользователь
-  const [user, setUser] = useState(storage.getAuthData().user || null);
+
+  // Загрузка бизнесов пользователя при смене пользователя
+  useEffect(() => {
+    if (user?.id) {
+      const cleanedBusinesses = storage.removeDefaultBusinesses(user.id);
+      setBusinesses(cleanedBusinesses);
+      
+      if (cleanedBusinesses.length > 0) {
+        const savedSelectedBusinessId = localStorage.getItem(`selected_business_${user.id}`);
+        const businessToSelect = savedSelectedBusinessId 
+          ? cleanedBusinesses.find(b => b.id === savedSelectedBusinessId)
+          : cleanedBusinesses[0];
+        
+        if (businessToSelect) {
+          setSelectedBusiness(businessToSelect.id);
+        }
+      }
+    } else {
+      setBusinesses([]);
+      setSelectedBusiness('');
+    }
+  }, [user]);
 
   // Инициализация при загрузке
   useEffect(() => {
@@ -104,41 +184,81 @@ export default function App() {
 
   // ========== ОБРАБОТЧИКИ АУТЕНТИФИКАЦИИ ==========
 
-  // Вход (моковая версия)
+  // Вход с проверкой зарегистрированных пользователей
   const handleLogin = async (email, password) => {
     setLoading(true);
     setError('');
     setSuccessMessage('');
     
     try {
-      // Моковая задержка
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Моковая проверка
-      if (email === 'demo@example.com' && password === 'password123') {
-        const mockUser = {
-          id: '1',
+      // Проверяем в зарегистрированных пользователях
+      const registeredUser = storage.findUserByEmail(email);
+      
+      if (registeredUser) {
+        if (registeredUser.password === password) {
+          if (!registeredUser.emailConfirmed && email === 'unconfirmed@example.com') {
+            // Пользователь без подтвержденного email
+            storage.setEmailConfirmationData(email);
+            setNeedsEmailConfirmation(true);
+            setSuccessMessage('Требуется подтверждение email');
+          } else {
+            // Успешный вход
+            storage.setAuthData({
+              token: `mock_jwt_token_${Date.now()}`,
+              user: {
+                id: registeredUser.id,
+                email: registeredUser.email,
+                name: registeredUser.name,
+                username: registeredUser.username,
+                emailConfirmed: registeredUser.emailConfirmed || true
+              }
+            });
+            
+            setUser({
+              id: registeredUser.id,
+              email: registeredUser.email,
+              name: registeredUser.name,
+              username: registeredUser.username,
+              emailConfirmed: registeredUser.emailConfirmed || true
+            });
+            
+            setIsAuthenticated(true);
+            setSuccessMessage('Вход выполнен успешно!');
+          }
+        } else {
+          throw new Error('Неверный пароль');
+        }
+      } else if (email === 'demo@example.com' && password === 'Demo123!@#') {
+        // Демо пользователь - создаем без дефолтных бизнесов
+        const demoUser = {
+          id: `demo_user_${Date.now()}`,
           email: 'demo@example.com',
           name: 'Демо Пользователь',
-          role: 'admin',
-          businesses: ['1', '2', '3']
+          username: 'demo',
+          emailConfirmed: true
         };
+        
+        // Сохраняем демо пользователя
+        storage.saveRegisteredUser({
+          ...demoUser,
+          password: 'Demo123!@#'
+        });
+        
+        // Очищаем дефолтные бизнесы для демо пользователя
+        storage.saveBusinessesForUser(demoUser.id, []);
         
         storage.setAuthData({
           token: 'mock_jwt_token_demo',
-          user: mockUser
+          user: demoUser
         });
         
-        setUser(mockUser);
+        setUser(demoUser);
         setIsAuthenticated(true);
-        setSuccessMessage('Вход выполнен успешно!');
-      } else if (email === 'unconfirmed@example.com') {
-        // Симуляция пользователя, которому нужно подтвердить email
-        storage.setEmailConfirmationData(email);
-        setNeedsEmailConfirmation(true);
-        setSuccessMessage('Требуется подтверждение email');
+        setSuccessMessage('Вход выполнен успешно! Добро пожаловать в демо-режим!');
       } else {
-        throw new Error('Неверный email или пароль');
+        throw new Error('Пользователь с таким email не найден');
       }
     } catch (err) {
       setError(err.message || 'Ошибка при входе');
@@ -147,50 +267,77 @@ export default function App() {
     }
   };
 
-  // Регистрация (моковая версия)
+  // Регистрация с сохранением пользователя
   const handleRegister = async (userData) => {
     setLoading(true);
     setError('');
     setSuccessMessage('');
     
     try {
-      // Моковая задержка
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Проверка паролей
+      // Проверка существования пользователя
+      const existingUser = storage.findUserByEmail(userData.email);
+      if (existingUser) {
+        throw new Error('Пользователь с таким email уже существует');
+      }
+      
+      if (userData.password.length < 6) {
+        throw new Error('Пароль должен содержать минимум 6 символов');
+      }
+      
       if (userData.password !== userData.confirmPassword) {
         throw new Error('Пароли не совпадают');
       }
       
-      // Проверка длины пароля
-      if (userData.password.length < 6) {
-        throw new Error('Пароль должен содержать минимум 6 символов');
-      }
+      // Создаем нового пользователя
+      const newUser = {
+        id: `user_${Date.now()}`,
+        email: userData.email,
+        name: userData.name,
+        username: userData.username,
+        password: userData.password,
+        emailConfirmed: false,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Сохраняем пользователя
+      storage.saveRegisteredUser(newUser);
+      
+      // Создаем пустой список бизнесов для нового пользователя
+      storage.saveBusinessesForUser(newUser.id, []);
       
       // Симуляция 50% шанса, что нужно подтвердить email
       const needsConfirmation = Math.random() > 0.5;
       
       if (needsConfirmation) {
-        // Нужно подтвердить email
         storage.setEmailConfirmationData(userData.email);
         setNeedsEmailConfirmation(true);
         setSuccessMessage('Регистрация успешна! Проверьте email для подтверждения.');
       } else {
-        // Автоматически входим
-        const mockUser = {
-          id: Date.now().toString(),
-          email: userData.email,
-          name: userData.name,
-          role: 'user',
-          businesses: []
-        };
+        // Автоматически подтверждаем email
+        newUser.emailConfirmed = true;
+        storage.saveRegisteredUser(newUser);
         
         storage.setAuthData({
           token: `mock_jwt_token_${Date.now()}`,
-          user: mockUser
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name,
+            username: newUser.username,
+            emailConfirmed: true
+          }
         });
         
-        setUser(mockUser);
+        setUser({
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          username: newUser.username,
+          emailConfirmed: true
+        });
+        
         setIsAuthenticated(true);
         setSuccessMessage('Регистрация успешна! Вы вошли в систему.');
       }
@@ -204,74 +351,75 @@ export default function App() {
     }
   };
 
-  // Восстановление пароля
+  // Восстановление пароля с сохранением
   const handleForgotPassword = async (email) => {
     setLoading(true);
     setError('');
     setSuccessMessage('');
     
     try {
-      // Моковая задержка
       await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const user = storage.findUserByEmail(email);
+      if (!user) {
+        throw new Error('Пользователь с таким email не найден');
+      }
       
       setSuccessMessage('Ссылка для восстановления пароля отправлена на email');
       return { success: true };
     } catch (err) {
-      setError('Ошибка при восстановлении пароля');
+      setError(err.message || 'Ошибка при восстановлении пароля');
       return { success: false };
     } finally {
       setLoading(false);
     }
   };
 
-  // Отправка кода подтверждения
-  const handleSendVerificationCode = async (email) => {
-    setLoading(true);
-    setError('');
-    setSuccessMessage('');
-    
-    try {
-      // Моковая задержка
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      setSuccessMessage('Код подтверждения отправлен на email');
-      return { success: true };
-    } catch (err) {
-      setError('Ошибка при отправке кода');
-      return { success: false };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Подтверждение кода
+  // Подтверждение кода и обновление emailConfirmed
   const handleConfirmVerificationCode = async (code, email) => {
     setLoading(true);
     setError('');
     setSuccessMessage('');
     
     try {
-      // Моковая задержка
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Моковая проверка кода (всегда успешно для кода "000000")
       if (code === '000000' || code.length === 6) {
-        const mockUser = {
-          id: Date.now().toString(),
-          email: email,
-          name: 'Подтверждённый Пользователь',
-          role: 'user',
-          businesses: []
-        };
+        const registeredUser = storage.findUserByEmail(email);
         
-        storage.setAuthData({
-          token: `mock_jwt_token_confirmed_${Date.now()}`,
-          user: mockUser
-        });
+        if (!registeredUser) {
+          throw new Error('Пользователь не найден');
+        }
+        
+        // Обновляем статус подтверждения
+        registeredUser.emailConfirmed = true;
+        storage.saveRegisteredUser(registeredUser);
         
         storage.clearEmailConfirmationData();
         
-        setUser(mockUser);
+        // Создаем пустой список бизнесов для подтвержденного пользователя
+        storage.saveBusinessesForUser(registeredUser.id, []);
+        
+        // Входим в систему
+        storage.setAuthData({
+          token: `mock_jwt_token_confirmed_${Date.now()}`,
+          user: {
+            id: registeredUser.id,
+            email: registeredUser.email,
+            name: registeredUser.name,
+            username: registeredUser.username,
+            emailConfirmed: true
+          }
+        });
+        
+        setUser({
+          id: registeredUser.id,
+          email: registeredUser.email,
+          name: registeredUser.name,
+          username: registeredUser.username,
+          emailConfirmed: true
+        });
+        
         setIsAuthenticated(true);
         setNeedsEmailConfirmation(false);
         setSuccessMessage('Email подтвержден успешно!');
@@ -282,8 +430,56 @@ export default function App() {
         return { success: false, confirmed: false };
       }
     } catch (err) {
-      setError('Ошибка при подтверждении кода');
+      setError(err.message || 'Ошибка при подтверждении кода');
       return { success: false, confirmed: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Создание бизнеса
+  const handleCreateBusiness = async (businessData) => {
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      if (!user?.id) {
+        throw new Error('Пользователь не авторизован');
+      }
+      
+      const newBusiness = {
+        id: `business_${Date.now()}`,
+        userId: user.id,
+        name: businessData.name,
+        logo: businessData.logoPreview || '🏢',
+        description: businessData.description,
+        industry: businessData.industry,
+        audienceReach: businessData.audienceReach || '',
+        region: businessData.region || '',
+        communicationStyle: businessData.communicationStyle,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Сохраняем бизнес для пользователя
+      const updatedBusinesses = storage.addBusinessForUser(user.id, newBusiness);
+      setBusinesses(updatedBusinesses);
+      setSelectedBusiness(newBusiness.id);
+      
+      // Сохраняем выбор в localStorage
+      localStorage.setItem(`selected_business_${user.id}`, newBusiness.id);
+      
+      setShowCreateBusiness(false);
+      setCurrentPage('dashboard');
+      
+      setSuccessMessage('Бизнес успешно создан!');
+      
+      return { success: true, business: newBusiness };
+    } catch (err) {
+      setError(err.message || 'Ошибка при создании бизнеса');
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -296,10 +492,11 @@ export default function App() {
     setIsAuthenticated(false);
     setNeedsEmailConfirmation(false);
     setUser(null);
+    setBusinesses([]);
+    setSelectedBusiness('');
     setCurrentPage('dashboard');
     setSuccessMessage('Выход выполнен успешно');
     
-    // Очищаем сообщение через 2 секунды
     setTimeout(() => {
       setSuccessMessage('');
     }, 2000);
@@ -318,7 +515,18 @@ export default function App() {
           setNeedsEmailConfirmation(false);
           setAuthMode('login');
         }}
-        onSendCode={handleSendVerificationCode}
+        onSendCode={async () => {
+          setLoading(true);
+          try {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            setSuccessMessage('Код подтверждения отправлен на email');
+            return { success: true };
+          } catch {
+            return { success: false };
+          } finally {
+            setLoading(false);
+          }
+        }}
         onConfirmCode={handleConfirmVerificationCode}
         loading={loading}
         error={error}
@@ -367,6 +575,26 @@ export default function App() {
     );
   }
 
+  // Если открыта страница создания бизнеса
+  if (showCreateBusiness) {
+    return (
+      <CreateBusinessPage
+        onBack={() => {
+          setShowCreateBusiness(false);
+          setCurrentPage('dashboard');
+        }}
+        onCreateBusiness={handleCreateBusiness}
+        loading={loading}
+        error={error}
+        successMessage={successMessage}
+        onClearMessages={() => {
+          setError('');
+          setSuccessMessage('');
+        }}
+      />
+    );
+  }
+
   // Главное приложение (авторизован)
   return (
     <div className="app">
@@ -387,10 +615,22 @@ export default function App() {
       
       <Header
         currentPage={currentPage}
-        onNavigate={setCurrentPage}
+        onNavigate={(page) => {
+          if (page === 'add-business') {
+            setShowCreateBusiness(true);
+          } else {
+            setCurrentPage(page);
+          }
+        }}
         businesses={businesses}
         selectedBusiness={selectedBusiness}
-        onSelectBusiness={setSelectedBusiness}
+        onSelectBusiness={(businessId) => {
+          setSelectedBusiness(businessId);
+          // Сохраняем выбор в localStorage
+          if (user?.id) {
+            localStorage.setItem(`selected_business_${user.id}`, businessId);
+          }
+        }}
         onLogout={handleLogout}
         user={user}
       />
@@ -399,23 +639,21 @@ export default function App() {
         {currentPage === 'dashboard' && (
           <DashboardPage
             onNavigate={setCurrentPage}
-            onAddBusiness={() => setShowBusinessModal(true)}
-            businesses={businesses}
+            user={user}
           />
         )}
-        {currentPage === 'create-post' && <CreatePostPage businesses={businesses} />}
-        {currentPage === 'content-plan' && <ContentPlanPage businesses={businesses} />}
-        {currentPage === 'telegram-analysis' && <TelegramAnalysisPage />}
-        {currentPage === 'pricing' && <PricingPage />}
-        {currentPage === 'settings' && <SettingsPage user={user} />}
+        {/* Другие страницы будут добавлены позже */}
+        {currentPage === 'pricing' && (
+          <div className="container">
+            <h1>Страница тарифов (в разработке)</h1>
+          </div>
+        )}
+        {currentPage === 'settings' && (
+          <div className="container">
+            <h1>Настройки (в разработке)</h1>
+          </div>
+        )}
       </main>
-
-      {showBusinessModal && (
-        <BusinessProfileModal
-          onClose={() => setShowBusinessModal(false)}
-          business={businesses.find(b => b.id === selectedBusiness)}
-        />
-      )}
     </div>
   );
 }

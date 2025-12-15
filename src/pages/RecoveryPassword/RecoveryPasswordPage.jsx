@@ -16,6 +16,7 @@ const RecoveryPasswordPage = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [localError, setLocalError] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
 
   const handleSendCode = async (e) => {
     e.preventDefault();
@@ -30,6 +31,7 @@ const RecoveryPasswordPage = ({
     try {
       const result = await onForgotPassword(email);
       if (result?.success) {
+        setResetEmail(email); // Сохраняем email для которого делаем сброс
         setStep(2);
       }
     } catch (err) {
@@ -48,8 +50,12 @@ const RecoveryPasswordPage = ({
       return;
     }
     
-    // В моковой версии всегда переходим к шагу 3
-    setStep(3);
+    // Проверяем код (в моковой версии любой 6-значный код работает)
+    if (fullCode.length === 6) {
+      setStep(3);
+    } else {
+      setLocalError('Неверный код');
+    }
   };
 
   const handleReset = async (e) => {
@@ -67,18 +73,55 @@ const RecoveryPasswordPage = ({
       return;
     }
     
+    // Проверяем требования к паролю
+    if (!/[A-Z]/.test(newPassword)) {
+      setLocalError('Пароль должен содержать хотя бы одну заглавную букву');
+      return;
+    }
+    
+    if (!/\d/.test(newPassword)) {
+      setLocalError('Пароль должен содержать хотя бы одну цифру');
+      return;
+    }
+    
+    if (!/[!@#$%^&*]/.test(newPassword)) {
+      setLocalError('Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)');
+      return;
+    }
+    
     if (newPassword !== confirmPassword) {
       setLocalError('Пароли не совпадают');
       return;
     }
     
-    // В моковой версии просто переходим к успеху
-    setStep(4);
+    try {
+      // Получаем всех пользователей из localStorage
+      const users = JSON.parse(localStorage.getItem('registered_users') || '[]');
+      const userIndex = users.findIndex(u => u.email === resetEmail);
+      
+      if (userIndex === -1) {
+        throw new Error('Пользователь не найден');
+      }
+      
+      // Обновляем пароль пользователя
+      users[userIndex].password = newPassword;
+      localStorage.setItem('registered_users', JSON.stringify(users));
+      
+      // Переходим к успешному завершению
+      setStep(4);
+    } catch (err) {
+      setLocalError(err.message || 'Ошибка при сбросе пароля');
+    }
   };
 
   const handleCodeInput = (index, value) => {
     if (value.length > 1) {
       value = value[value.length - 1];
+    }
+    
+    // Разрешаем только цифры
+    if (value && !/^\d+$/.test(value)) {
+      return;
     }
     
     const newCode = [...code];
@@ -94,6 +137,15 @@ const RecoveryPasswordPage = ({
   const handleKeyDown = (index, e) => {
     if (e.key === 'Backspace' && !code[index] && index > 0) {
       document.getElementById(`code-${index - 1}`)?.focus();
+    }
+  };
+
+  // Функция для получения сохраненных пользователей (для отладки)
+  const getRegisteredUsers = () => {
+    try {
+      return JSON.parse(localStorage.getItem('registered_users') || '[]');
+    } catch {
+      return [];
     }
   };
 
@@ -215,7 +267,7 @@ const RecoveryPasswordPage = ({
                   ))}
                 </div>
                 <p className="code-hint">
-                  Код отправлен на: <strong>{email}</strong>
+                  Код отправлен на: <strong>{resetEmail}</strong>
                 </p>
               </div>
               <div className="form-actions">
@@ -357,6 +409,14 @@ const RecoveryPasswordPage = ({
                 Свяжитесь с поддержкой
               </button>
             </p>
+            
+            {/* Отладочная информация (можно удалить в продакшене) */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="debug-info" style={{marginTop: '10px', fontSize: '12px', color: '#666'}}>
+                <p>Зарегистрированные пользователи: {getRegisteredUsers().length}</p>
+                <p>Email для сброса: {resetEmail}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
